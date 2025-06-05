@@ -26,7 +26,6 @@ def angle_between_vectors(v1, v2):
 
 def is_quarter_arc(gray_img, center, radius):
     # Check if the arc is roughly a quarter circle by examining edge points around the circle
-    # Sample points along the circle's perimeter and count how many edges exist
     edge_points = 0
     total_points = 0
     for angle_deg in range(0, 91, 5):  # 0 to 90 degrees in steps
@@ -34,7 +33,7 @@ def is_quarter_arc(gray_img, center, radius):
         x = int(center[0] + radius * np.cos(angle_rad))
         y = int(center[1] + radius * np.sin(angle_rad))
         total_points += 1
-        if y < gray_img.shape[0] and x < gray_img.shape[1]:
+        if 0 <= y < gray_img.shape[0] and 0 <= x < gray_img.shape[1]:
             if gray_img[y, x] > 0:  # edge pixel detected
                 edge_points += 1
     # Consider it a quarter arc if at least 60% of sampled points have edges
@@ -76,6 +75,14 @@ def detect_doors(img):
             endpoint2_near = dist2 < tolerance
 
             if endpoint1_near ^ endpoint2_near:  # XOR: only one endpoint connected
+
+                # Check line length vs radius of circle
+                line_length = point_distance((x1, y1), (x2, y2))
+
+                # Allow some tolerance, e.g. line length within ±20% of radius
+                if not (0.8 * r <= line_length <= 1.2 * r):
+                    continue
+
                 # The other endpoint should be free: far from circle and other lines (simple check)
                 free_endpoint = (x2, y2) if endpoint1_near else (x1, y1)
                 dist_to_circle = point_distance(free_endpoint, (cx, cy))
